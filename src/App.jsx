@@ -14,6 +14,7 @@ import PostJob from './pages/PostJob'
 import FindHelp from './pages/FindHelp'
 import JobDetail from './pages/JobDetail'
 import DIYAssistant from './pages/DIYAssistant'
+import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -45,6 +46,9 @@ export default function App() {
           <ProtectedRoute role="provider"><ProviderDashboard /></ProtectedRoute>
         } />
 
+        <Route path="/profile" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        } />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />

@@ -42,6 +42,7 @@ export default function Navbar() {
                   <NavLink to="/post-job" style={navStyle}>Post a Job</NavLink>
                 )}
                 <NavLink to={dashPath} style={navStyle}>Dashboard</NavLink>
+                <NavLink to="/profile" style={navStyle}>Profile</NavLink>
                 <button onClick={handleSignOut} style={styles.signOutBtn}>Sign Out</button>
               </>
             ) : (
@@ -65,6 +66,7 @@ export default function Navbar() {
                 <NavLink to="/post-job" style={drawerNavStyle}>Post a Job</NavLink>
               )}
               <NavLink to={dashPath} style={drawerNavStyle}>Dashboard</NavLink>
+              <NavLink to="/profile" style={drawerNavStyle}>Profile</NavLink>
               <button onClick={handleSignOut} style={{ ...styles.signOutBtn, marginTop: '0.5rem', width: '100%' }}>Sign Out</button>
             </>
           ) : (
