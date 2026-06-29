@@ -11,8 +11,10 @@ export default function Footer() {
         <div style={styles.links}>
           <div style={styles.col}>
             <strong>Platform</strong>
-            <Link to="/jobs">Find Help</Link>
+            <Link to="/help">Find Help</Link>
+            <Link to="/jobs">Find a Job</Link>
             <Link to="/post-job">Post a Job</Link>
+            <Link to="/post-help">Post Help</Link>
             <Link to="/diy">DIY Assistant</Link>
           </div>
           <div style={styles.col}>
