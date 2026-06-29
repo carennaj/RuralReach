@@ -8,7 +8,6 @@ export default function Navbar() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Close menu on route change
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
   async function handleSignOut() {
@@ -17,6 +16,8 @@ export default function Navbar() {
   }
 
   const dashPath = profile?.role === 'provider' ? '/dashboard/provider' : '/dashboard/homeowner'
+  const isProvider = profile?.role === 'provider'
+  const isHomeowner = profile?.role === 'homeowner'
 
   return (
     <>
@@ -34,13 +35,14 @@ export default function Navbar() {
           </button>
 
           <div style={styles.links}>
-            <NavLink to="/jobs" style={navStyle}>Find Help</NavLink>
+            <NavLink to="/help" style={navStyle}>Find Help</NavLink>
+            <NavLink to="/jobs" style={navStyle}>Find a Job</NavLink>
             <NavLink to="/diy" style={navStyle}>DIY Assistant</NavLink>
+
             {user ? (
               <>
-                {profile?.role === 'homeowner' && (
-                  <NavLink to="/post-job" style={navStyle}>Post a Job</NavLink>
-                )}
+                {isHomeowner && <NavLink to="/post-job" style={navStyle}>Post a Job</NavLink>}
+                {isProvider && <NavLink to="/post-help" style={navStyle}>Post Help</NavLink>}
                 <NavLink to={dashPath} style={navStyle}>Dashboard</NavLink>
                 <NavLink to="/profile" style={navStyle}>Profile</NavLink>
                 <button onClick={handleSignOut} style={styles.signOutBtn}>Sign Out</button>
@@ -55,16 +57,15 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
       {menuOpen && (
         <div style={styles.drawer}>
-          <NavLink to="/jobs" style={drawerNavStyle}>Find Help</NavLink>
+          <NavLink to="/help" style={drawerNavStyle}>Find Help</NavLink>
+          <NavLink to="/jobs" style={drawerNavStyle}>Find a Job</NavLink>
           <NavLink to="/diy" style={drawerNavStyle}>DIY Assistant</NavLink>
           {user ? (
             <>
-              {profile?.role === 'homeowner' && (
-                <NavLink to="/post-job" style={drawerNavStyle}>Post a Job</NavLink>
-              )}
+              {isHomeowner && <NavLink to="/post-job" style={drawerNavStyle}>Post a Job</NavLink>}
+              {isProvider && <NavLink to="/post-help" style={drawerNavStyle}>Post Help</NavLink>}
               <NavLink to={dashPath} style={drawerNavStyle}>Dashboard</NavLink>
               <NavLink to="/profile" style={drawerNavStyle}>Profile</NavLink>
               <button onClick={handleSignOut} style={{ ...styles.signOutBtn, marginTop: '0.5rem', width: '100%' }}>Sign Out</button>
@@ -79,13 +80,9 @@ export default function Navbar() {
       )}
 
       <style>{`
-        @media (min-width: 701px) {
-          .rr-hamburger { display: none !important; }
-          .rr-drawer { display: none !important; }
-        }
-        @media (max-width: 700px) {
+        @media (max-width: 820px) {
           .rr-links { display: none !important; }
-          .rr-hamburger { display: block !important; }
+          .rr-hamburger { display: flex !important; }
         }
       `}</style>
     </>
@@ -96,12 +93,13 @@ function navStyle({ isActive }) {
   return {
     color: isActive ? '#fff' : 'rgba(255,255,255,0.75)',
     fontWeight: 600,
-    fontSize: '0.9rem',
+    fontSize: '0.88rem',
     textDecoration: 'none',
-    padding: '0.35rem 0.75rem',
+    padding: '0.35rem 0.65rem',
     borderRadius: '8px',
     background: isActive ? 'rgba(255,255,255,0.15)' : 'transparent',
     transition: 'all 0.15s',
+    whiteSpace: 'nowrap',
   }
 }
 
@@ -135,23 +133,21 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '1.5rem',
+    gap: '1rem',
   },
   logo: {
     color: '#fff',
-    fontSize: '1.2rem',
+    fontSize: '1.15rem',
     fontWeight: 800,
     textDecoration: 'none',
     letterSpacing: '-0.02em',
     flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.4rem',
   },
   links: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.25rem',
+    gap: '0.15rem',
+    flexWrap: 'nowrap',
   },
   drawer: {
     background: 'var(--green-dark)',
@@ -177,6 +173,7 @@ const styles = {
     height: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   signOutBtn: {
     background: 'rgba(255,255,255,0.1)',
@@ -187,6 +184,6 @@ const styles = {
     fontSize: '0.88rem',
     fontWeight: 600,
     cursor: 'pointer',
-    transition: 'background 0.15s',
+    whiteSpace: 'nowrap',
   },
 }
