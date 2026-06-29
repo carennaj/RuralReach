@@ -1,139 +1,141 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { SERVICE_CATEGORIES, JOB_STATUS_LABELS } from '../lib/constants'
-import { DEMO_JOBS } from '../lib/demoJobs'
+import { SERVICE_CATEGORIES } from '../lib/constants'
+
+const DEMO_PROVIDERS = [
+  { id: 'dp-1', profiles: { full_name: 'Mike Tanner' }, bio: 'Licensed plumber with 12 years experience. I serve rural homeowners across southern Oklahoma. Same-day service available for emergencies.', specialties: ['Plumbing', 'Well & Septic'], zip_codes: ['73401', '73402', '73434'], created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'dp-2', profiles: { full_name: 'Randy Elsworth' }, bio: 'Certified electrician. Residential and farm wiring, panel upgrades, generator hookups. 20+ years in the trade.', specialties: ['Electrical'], zip_codes: ['73401', '73501'], created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'dp-3', profiles: { full_name: 'Dale & Sons Landscaping' }, bio: 'Family-owned lawn and land care service. Mowing, brush clearing, fencing, and tree removal. Free estimates.', specialties: ['Landscaping & Lawn Care', 'Fencing', 'Tree Service'], zip_codes: ['73434', '73401', '73402'], created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'dp-4', profiles: { full_name: 'Gary Hutchins' }, bio: 'General contractor and handyman. 25 years doing everything from roof repairs to full remodels. No job too small.', specialties: ['General Repair / Handyman', 'Roofing', 'Carpentry'], zip_codes: ['73501', '73401'], created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'dp-5', profiles: { full_name: 'CoolAir HVAC Services' }, bio: 'HVAC installation, maintenance, and repair. All makes and models. Emergency service available 7 days a week.', specialties: ['HVAC'], zip_codes: ['73401', '73434', '73501'], created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'dp-6', profiles: { full_name: 'Beth Calloway Cleaning' }, bio: 'Residential cleaning, pressure washing, and move-out cleans. Reliable, insured, and locally owned.', specialties: ['Cleaning Services'], zip_codes: ['73434', '73402'], created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+]
 
 export default function FindHelp() {
-  const [jobs, setJobs] = useState([])
+  const [providers, setProviders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ category: '', zip_code: '', search: '' })
+  const [filters, setFilters] = useState({ specialty: '', zip_code: '', search: '' })
 
-  useEffect(() => {
-    fetchJobs()
-  }, [filters])
+  useEffect(() => { fetchProviders() }, [filters])
 
-  async function fetchJobs() {
+  async function fetchProviders() {
     setLoading(true)
     let q = supabase
-      .from('job_postings')
+      .from('provider_profiles')
       .select('*, profiles(full_name)')
-      .eq('status', 'open')
       .order('created_at', { ascending: false })
 
-    if (filters.category) q = q.eq('category', filters.category)
-    if (filters.zip_code) q = q.eq('zip_code', filters.zip_code.trim())
-    if (filters.search) q = q.ilike('title', `%${filters.search.trim()}%`)
+    if (filters.specialty) q = q.contains('specialties', [filters.specialty])
+    if (filters.zip_code) q = q.contains('zip_codes', [filters.zip_code.trim()])
 
     const { data } = await q
-    const real = data || []
-    // Show demo jobs to fill empty state (filtered out once real jobs exist)
-    setJobs(real.length > 0 ? real : filterDemos())
+    let real = data || []
+    if (filters.search) {
+      const s = filters.search.toLowerCase()
+      real = real.filter(p => p.profiles?.full_name?.toLowerCase().includes(s) || p.bio?.toLowerCase().includes(s))
+    }
+    setProviders(real.length > 0 ? real : filterDemos())
     setLoading(false)
   }
 
   function filterDemos() {
-    let demos = [...DEMO_JOBS]
-    if (filters.category) demos = demos.filter(j => j.category === filters.category)
-    if (filters.zip_code) demos = demos.filter(j => j.zip_code === filters.zip_code.trim())
-    if (filters.search) demos = demos.filter(j => j.title.toLowerCase().includes(filters.search.toLowerCase()))
+    let demos = [...DEMO_PROVIDERS]
+    if (filters.specialty) demos = demos.filter(p => p.specialties.includes(filters.specialty))
+    if (filters.zip_code) demos = demos.filter(p => p.zip_codes.includes(filters.zip_code.trim()))
+    if (filters.search) {
+      const s = filters.search.toLowerCase()
+      demos = demos.filter(p => p.profiles.full_name.toLowerCase().includes(s) || p.bio.toLowerCase().includes(s))
+    }
     return demos
   }
 
-  const clearFilters = () => setFilters({ category: '', zip_code: '', search: '' })
-  const hasFilters = filters.category || filters.zip_code || filters.search
+  const clearFilters = () => setFilters({ specialty: '', zip_code: '', search: '' })
+  const hasFilters = filters.specialty || filters.zip_code || filters.search
 
   return (
     <div className="page">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
           <h1 style={{ marginBottom: '0.25rem' }}>Find Help</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Browse open jobs in your area</p>
+          <p style={{ color: 'var(--text-muted)' }}>Browse local service providers in your area</p>
         </div>
-        <Link to="/post-job" className="btn btn-primary">+ Post a Job</Link>
+        <Link to="/post-help" className="btn btn-primary">+ Offer Your Services</Link>
       </div>
 
-      {/* Filters */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ margin: 0, flex: '2 1 220px' }}>
+          <div className="form-group" style={{ margin: 0, flex: '2 1 200px' }}>
             <label>Search</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-              placeholder="e.g. fence repair, plumbing…"
-            />
+            <input type="text" value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))} placeholder="Name, skill, keyword…" />
           </div>
           <div className="form-group" style={{ margin: 0, flex: '1 1 180px' }}>
-            <label>Category</label>
-            <select
-              value={filters.category}
-              onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
-            >
-              <option value="">All Categories</option>
+            <label>Service Type</label>
+            <select value={filters.specialty} onChange={e => setFilters(f => ({ ...f, specialty: e.target.value }))}>
+              <option value="">All Services</option>
               {SERVICE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div className="form-group" style={{ margin: 0, flex: '0 1 150px' }}>
             <label>Zip Code</label>
-            <input
-              type="text"
-              value={filters.zip_code}
-              onChange={e => setFilters(f => ({ ...f, zip_code: e.target.value }))}
-              placeholder="73401"
-              maxLength={5}
-            />
+            <input type="text" value={filters.zip_code} onChange={e => setFilters(f => ({ ...f, zip_code: e.target.value }))} placeholder="73401" maxLength={5} />
           </div>
-          {hasFilters && (
-            <button className="btn btn-outline btn-sm" onClick={clearFilters} style={{ marginBottom: '1.1rem' }}>
-              Clear
-            </button>
-          )}
+          {hasFilters && <button className="btn btn-outline btn-sm" onClick={clearFilters} style={{ marginBottom: '1.1rem' }}>Clear</button>}
         </div>
       </div>
 
       {loading ? (
         <SkeletonList />
-      ) : jobs.length === 0 ? (
-        <div className="empty-state" style={{ padding: '3rem', textAlign: 'center' }}>
+      ) : providers.length === 0 ? (
+        <div className="empty-state">
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-          <h3>No jobs match your search</h3>
-          <p style={{ marginBottom: '1.25rem' }}>Try different keywords, a different category, or clear your filters.</p>
-          <button className="btn btn-outline" onClick={clearFilters}>Clear Filters</button>
+          <h3>No providers match your search</h3>
+          <p style={{ marginBottom: '1.25rem' }}>Try different filters or be the first to offer services in this area.</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="btn btn-outline" onClick={clearFilters}>Clear Filters</button>
+            <Link to="/post-help" className="btn btn-primary">Offer Your Services</Link>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {jobs.map(job => <JobCard key={job.id} job={job} />)}
+          {providers.map(p => <ProviderCard key={p.id} provider={p} />)}
         </div>
       )}
     </div>
   )
 }
 
-function JobCard({ job }) {
-  const isDemo = String(job.id).startsWith('demo-')
+function ProviderCard({ provider }) {
+  const isDemo = String(provider.id).startsWith('dp-')
+  const name = provider.profiles?.full_name || 'Local Provider'
   return (
-    <Link to={isDemo ? '/signup' : `/jobs/${job.id}`} style={{ textDecoration: 'none' }}>
-      <div className="card" style={{ transition: 'box-shadow 0.15s', cursor: 'pointer' }}
-        onMouseEnter={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-        onMouseLeave={e => e.currentTarget.style.boxShadow = 'var(--shadow)'}
+    <Link to={isDemo ? '/signup' : `/providers/${provider.id}`} style={{ textDecoration: 'none' }}>
+      <div className="card" style={{ cursor: 'pointer', transition: 'box-shadow 0.15s, transform 0.15s' }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow)'; e.currentTarget.style.transform = 'none' }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ marginBottom: '0.3rem' }}>{job.title}</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '0.75rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {job.description}
-            </p>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--green-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--green-dark)', fontSize: '1.1rem', flexShrink: 0 }}>
+            {name[0].toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+              <h3 style={{ marginBottom: '0.25rem' }}>{name}</h3>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {provider.zip_codes?.slice(0, 2).map(z => <span key={z} className="tag">📍 {z}</span>)}
+                {provider.zip_codes?.length > 2 && <span className="tag">+{provider.zip_codes.length - 2} more</span>}
+              </div>
+            </div>
+            {provider.bio && (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', marginBottom: '0.75rem', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {provider.bio}
+              </p>
+            )}
             <div className="tag-list">
-              <span className="tag">{job.category}</span>
-              <span className="tag">📍 {job.zip_code}</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', alignSelf: 'center' }}>
-                Posted by {job.profiles?.full_name || 'Homeowner'} · {timeAgo(job.created_at)}
-              </span>
+              {provider.specialties?.slice(0, 4).map(s => <span key={s} className="tag">{s}</span>)}
+              {provider.specialties?.length > 4 && <span className="tag">+{provider.specialties.length - 4} more</span>}
             </div>
           </div>
-          <span className={`badge badge-${job.status}`}>{JOB_STATUS_LABELS[job.status]}</span>
         </div>
       </div>
     </Link>
@@ -144,30 +146,19 @@ function SkeletonList() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {[1, 2, 3].map(i => (
-        <div key={i} className="card">
-          <div style={sk(220, 22, 'var(--border)', 8)} />
-          <div style={{ ...sk('80%', 16, 'var(--border)', 6), marginTop: 10 }} />
-          <div style={{ ...sk('60%', 16, 'var(--border)', 6), marginTop: 6 }} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            <div style={sk(70, 24, 'var(--border)', 12)} />
-            <div style={sk(80, 24, 'var(--border)', 12)} />
+        <div key={i} className="card" style={{ display: 'flex', gap: '1rem' }}>
+          <span className="skeleton" style={{ width: 48, height: 48, borderRadius: '50%', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <span className="skeleton" style={{ display: 'block', width: 160, height: 20, marginBottom: 10 }} />
+            <span className="skeleton" style={{ display: 'block', width: '80%', height: 16, marginBottom: 6 }} />
+            <span className="skeleton" style={{ display: 'block', width: '60%', height: 16, marginBottom: 12 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <span className="skeleton" style={{ display: 'block', width: 70, height: 24, borderRadius: 999 }} />
+              <span className="skeleton" style={{ display: 'block', width: 90, height: 24, borderRadius: 999 }} />
+            </div>
           </div>
         </div>
       ))}
-      <style>{`@keyframes shimmer{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}.skeleton{animation:shimmer 1.4s ease-in-out infinite}`}</style>
     </div>
   )
-}
-
-function sk(w, h, bg, radius) {
-  return { width: w, height: h, background: bg, borderRadius: radius, className: 'skeleton' }
-}
-
-function timeAgo(ts) {
-  const diff = Date.now() - new Date(ts).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
 }
